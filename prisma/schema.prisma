@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BetaTester {
+  id              String    @id @default(uuid())
+  name            String
+  email           String    @unique
+  wave            Int?
+  status          String    @default("waitlisted")
+  engagementScore Int?
+  geography       String?
+  isPlanner       Boolean   @default(false)
+  hasRealTrip     Boolean   @default(false)
+  notes           String?
+  removedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("beta_testers")
+}
+
+model BetaWave {
+  id        String    @id @default(uuid())
+  number    Int       @unique
+  name      String
+  capacity  Int
+  status    String    @default("locked")
+  openedAt  DateTime?
+  closedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("beta_waves")
+}
+
+model Bug {
+  id                  String             @id @default(uuid())
+  ticketNumber        String             @unique
+  title               String
+  description         String
+  priority            String
+  status              String             @default("open")
+  module              String
+  reporterType        String
+  reporterName        String?
+  reporterEmail       String?
+  stepsToReproduce    String?
+  screenshotUrl       String?
+  wave                Int?
+  assignedTo          String?
+  aiDuplicateOf       String?
+  aiConfidence        Float?
+  aiSuggestedPriority String?
+  aiSuggestedModule   String?
+  reproductionStepsAi String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  comments      BugComment[]
+  statusHistory BugStatusHistory[]
+
+  @@map("bugs")
+}
+
+model BugComment {
+  id         String   @id @default(uuid())
+  bugId      String
+  authorName String
+  authorType String
+  content    String
+  createdAt  DateTime @default(now())
+
+  bug Bug @relation(fields: [bugId], references: [id], onDelete: Cascade)
+
+  @@map("bug_comments")
+}
+
+model BugStatusHistory {
+  id         String   @id @default(uuid())
+  bugId      String
+  fromStatus String
+  toStatus   String
+  changedBy  String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  bug Bug @relation(fields: [bugId], references: [id], onDelete: Cascade)
+
+  @@map("bug_status_history")
+}
+
+model Feedback {
+  id           String   @id @default(uuid())
+  triggerEvent String
+  rating       Int
+  response     String?
+  flow         String?
+  testerId     String?
+  createdAt    DateTime @default(now())
+
+  @@map("feedback")
+}
+
+model SurveyResponse {
+  id           String   @id @default(uuid())
+  surveyType   String
+  responses    Json
+  npsScore     Int?
+  quoteConsent Boolean  @default(false)
+  quoteText    String?
+  testerId     String?
+  createdAt    DateTime @default(now())
+
+  @@map("survey_responses")
+}
+
+model ContentBank {
+  id          String   @id @default(uuid())
+  quote       String
+  sourceName  String
+  sourceCity  String?
+  consent     Boolean  @default(false)
+  contentType String
+  createdAt   DateTime @default(now())
+
+  @@map("content_bank")
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+
+  @@map("admin_users")
+}
