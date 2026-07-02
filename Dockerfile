@@ -11,7 +11,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # ── Stage 2: runtime (production deps only, no TS source) ─────────────────────
-FROM node:20-alpine AS runner
+FROM node:20-alpine AS production
 WORKDIR /app
 
 COPY package*.json ./
@@ -21,7 +21,7 @@ RUN npx prisma generate
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 3002
+EXPOSE 5000
 
 # Apply pending migrations then start
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
