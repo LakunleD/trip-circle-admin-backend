@@ -141,3 +141,107 @@ model AdminUser {
 
   @@map("admin_users")
 }
+
+// ── The Circle (user voice channel) ─────────────────────────────────────────
+
+model CircleSubmission {
+  id              String    @id @default(uuid())
+  ticketNumber    String    @unique
+  submitterEmail  String
+  submitterName   String?
+  submissionType  String    // idea | improvement | love_it | question | other
+  message         String
+  productArea     String?   // chat | payments | planning | groups | ai | general
+  rating          Int?
+  status          String    @default("new") // new | read | replied | actioned | converted
+  replySent       Boolean   @default(false)
+  replySentAt     DateTime?
+  followUpInvited Boolean   @default(false)
+  source          String    @default("widget") // widget | post_flow | bug_deflect | manual
+  flowContext     String?
+  sessionId       String?
+  adminNotes      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("circle_submissions")
+}
+
+// ── Feature Board ─────────────────────────────────────────────────────────────
+
+model Feature {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  category    String
+  status      String   @default("backlog")
+  priority    String   @default("medium")
+  originTag   String?
+  phase       String?
+  workType    String   @default("App Feature")
+  assignee    String?
+  specLink    String?
+  tier        String   @default("free")
+  platform    String   @default("web")
+  tags        String[]
+  links       Json     @default("[]")
+  createdBy   String
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  history  FeatureHistory[]
+  comments FeatureComment[]
+  aiDrafts AiSpecDraft[]
+
+  @@map("features")
+}
+
+model FeatureHistory {
+  id           String   @id @default(uuid())
+  featureId    String
+  fieldChanged String
+  oldValue     String?
+  newValue     String?
+  changedBy    String
+  createdAt    DateTime @default(now())
+
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@map("feature_history")
+}
+
+model FeatureComment {
+  id          String   @id @default(uuid())
+  featureId   String
+  authorEmail String
+  authorName  String
+  content     String
+  createdAt   DateTime @default(now())
+
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@map("feature_comments")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  role      String
+  phone     String?
+  createdAt DateTime @default(now())
+
+  @@map("team_members")
+}
+
+model AiSpecDraft {
+  id        String   @id @default(uuid())
+  featureId String
+  content   String
+  createdAt DateTime @default(now())
+
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@map("ai_spec_drafts")
+}

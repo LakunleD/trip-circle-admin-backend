@@ -10,6 +10,12 @@ import { BugsModule } from './bugs/bugs.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { SurveysModule } from './surveys/surveys.module';
 import { ContentBankModule } from './content-bank/content-bank.module';
+import { FeaturesModule } from './features/features.module';
+import { TeamMembersModule } from './team-members/team-members.module';
+import { FeatureImportModule } from './feature-import/feature-import.module';
+import { FeatureNotificationsModule } from './feature-notifications/feature-notifications.module';
+import { OpsAiModule } from './ops-ai/ops-ai.module';
+import { CircleModule } from './circle/circle.module';
 
 @Controller()
 class HealthController {
@@ -26,12 +32,21 @@ class HealthController {
     AlertsModule,
     AuthModule,
     AdminUsersModule,
+    // ── Beta dashboard ───────────────────────────────
     BetaTestersModule,
     BetaWavesModule,
     BugsModule,
     FeedbackModule,
     SurveysModule,
     ContentBankModule,
+    // ── Feature board (ops.tripcircle.us) ───────────
+    FeaturesModule,
+    TeamMembersModule,
+    FeatureImportModule,
+    FeatureNotificationsModule,
+    OpsAiModule,
+    // ── The Circle (user voice channel) ─────────────
+    CircleModule,
   ],
   controllers: [HealthController],
 })

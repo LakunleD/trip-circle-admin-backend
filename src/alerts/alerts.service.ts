@@ -121,6 +121,63 @@ export class AlertsService {
     }
   }
 
+  async sendCircleAutoReply(submission: {
+    submitterEmail: string;
+    submitterName?: string;
+    submissionType: string;
+    ticketNumber: string;
+  }) {
+    if (!this.resend) {
+      this.logger.warn('RESEND_API_KEY not set — skipping Circle auto-reply');
+      return;
+    }
+
+    const from = 'Huncho at TripCircle <founders@tripcircle.us>';
+
+    const firstName = submission.submitterName?.split(' ')[0] ?? 'there';
+
+    const typeLabel: Record<string, string> = {
+      idea: 'idea',
+      improvement: 'improvement',
+      love_it: 'kind words',
+      question: 'question',
+      other: 'message',
+    };
+    const readableType = typeLabel[submission.submissionType] ?? 'message';
+
+    try {
+      await this.resend.emails.send({
+        from,
+        to: submission.submitterEmail,
+        subject: 'you just made TripCircle better',
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
+            <p style="font-size:16px;line-height:1.6">Hey ${firstName},</p>
+            <p style="font-size:16px;line-height:1.6">
+              Got your ${readableType}. We actually read every single one of these —
+              this goes straight into the team's review queue.
+            </p>
+            <p style="font-size:16px;line-height:1.6">
+              If there's anything that needs a follow-up from us, we'll reach out directly.
+              Either way, thank you for taking the time — it shapes what we build next.
+            </p>
+            <p style="font-size:16px;line-height:1.6">— Huncho at TripCircle</p>
+            <p style="color:#9ca3af;font-size:12px;margin-top:32px">
+              Reference: ${submission.ticketNumber}
+            </p>
+          </div>
+        `,
+      });
+
+      this.logger.log(`Circle auto-reply sent to ${submission.submitterEmail}`);
+    } catch (err) {
+      this.logger.error(
+        `Circle auto-reply failed for ${submission.submitterEmail}`,
+        (err as Error)?.message,
+      );
+    }
+  }
+
   private async sendWhatsApp(bug: {
     ticketNumber: string;
     title: string;
