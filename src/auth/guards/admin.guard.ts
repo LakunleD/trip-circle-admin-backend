@@ -11,11 +11,14 @@ export class AdminGuard implements CanActivate {
 
     if (!user?.email) throw new ForbiddenException('Admin access required');
 
-    const admin = await this.prisma.adminUser.findUnique({
+    const adminUser = await this.prisma.adminUser.findUnique({
       where: { email: user.email },
     });
 
-    if (!admin) throw new ForbiddenException('Admin access required');
+    if (!adminUser) throw new ForbiddenException('Admin access required');
+
+    // attach to request so RolesGuard can read it without a second DB query
+    request.adminUser = adminUser;
     return true;
   }
 }
