@@ -1,7 +1,7 @@
 import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { GoogleAuthGuard, getAllowedRedirectUrls } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Auth')
@@ -21,8 +21,13 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   googleCallback(@Req() req: any, @Res() res: any) {
     const token = this.authService.generateToken(req.user);
-    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
-    return res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+    const state = req.query?.state as string | undefined;
+    const allowed = getAllowedRedirectUrls();
+    const redirectBase =
+      state && allowed.includes(state)
+        ? state
+        : (process.env.FRONTEND_URL ?? 'http://localhost:5173');
+    return res.redirect(`${redirectBase}?token=${token}`);
   }
 
   @ApiOperation({ summary: 'Get the currently authenticated admin user' })

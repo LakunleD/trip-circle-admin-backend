@@ -51,21 +51,45 @@ export class FeatureImportService {
   }
 
   private applyDefaults(item: ImportFeatureItemDto) {
+    const raw = item as any;
+
+    // accept both camelCase and snake_case field names
+    const originTag = item.originTag ?? raw.origin_tag ?? null;
+    const workType = item.workType ?? raw.work_type ?? 'App Feature';
+    const specLink = item.specLink ?? raw.spec_link ?? null;
+
+    // map p0/p1/p2/p3 priority labels to standard values
+    const PRIORITY_MAP: Record<string, string> = {
+      p0: 'critical',
+      p1: 'high',
+      p2: 'medium',
+      p3: 'low',
+    };
+    const rawPriority = item.priority ?? 'medium';
+    const priority = PRIORITY_MAP[rawPriority.toLowerCase()] ?? rawPriority;
+
+    // map status — "done" → "built", preserve other valid values
+    const STATUS_MAP: Record<string, string> = {
+      done: 'built',
+    };
+    const rawStatus = raw.status ?? 'not_started';
+    const status = STATUS_MAP[rawStatus.toLowerCase()] ?? rawStatus;
+
     return {
       title: item.title,
       description: item.description ?? null,
       category: item.category ?? 'General',
-      priority: item.priority ?? 'medium',
+      priority,
+      status,
       phase: item.phase ?? null,
-      originTag: item.originTag ?? null,
-      workType: item.workType ?? 'App Feature',
+      originTag,
+      workType,
       assignee: item.assignee ?? null,
-      specLink: item.specLink ?? null,
+      specLink,
       tier: item.tier ?? 'free',
       platform: item.platform ?? 'web',
       tags: item.tags ?? [],
       links: (item.links ?? []) as Prisma.InputJsonValue,
-      status: 'backlog',
     };
   }
 }
