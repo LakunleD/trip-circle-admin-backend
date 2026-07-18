@@ -62,7 +62,4 @@ export class ImportFeaturesDto {
   @ValidateNested({ each: true })
   @Type(() => ImportFeatureItemDto)
   features: ImportFeatureItemDto[];
-
-  @IsString()
-  importedBy: string;
 }

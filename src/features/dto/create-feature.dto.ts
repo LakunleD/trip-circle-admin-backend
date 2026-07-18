@@ -56,7 +56,4 @@ export class CreateFeatureDto {
   @IsArray()
   @IsObject({ each: true })
   links?: Record<string, unknown>[];
-
-  @IsString()
-  createdBy: string;
 }
