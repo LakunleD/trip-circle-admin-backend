@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FeatureImportService } from './feature-import.service';
 import { ImportFeaturesDto } from './dto/import-features.dto';
@@ -21,7 +21,7 @@ export class FeatureImportController {
 
   @ApiOperation({ summary: 'Bulk import features, skips duplicates by title — admin only' })
   @Post('import')
-  import(@Body() dto: ImportFeaturesDto) {
-    return this.service.import(dto);
+  import(@Body() dto: ImportFeaturesDto, @Req() req: any) {
+    return this.service.import(dto, req.user.email);
   }
 }

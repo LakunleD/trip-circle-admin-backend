@@ -14,7 +14,7 @@ export class FeatureImportService {
     return items.map((item) => this.applyDefaults(item));
   }
 
-  async import(dto: ImportFeaturesDto) {
+  async import(dto: ImportFeaturesDto, importedBy: string) {
     const normalised = dto.features.map((item) => this.applyDefaults(item));
 
     // fetch all existing titles once
@@ -34,7 +34,7 @@ export class FeatureImportService {
     for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
       const batch = toInsert.slice(i, i + BATCH_SIZE).map((item) => ({
         ...item,
-        createdBy: dto.importedBy,
+        createdBy: importedBy,
       }));
 
       const result = await this.prisma.feature.createMany({ data: batch, skipDuplicates: true });

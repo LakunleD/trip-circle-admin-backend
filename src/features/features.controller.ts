@@ -62,14 +62,14 @@ export class FeaturesController {
 
   @ApiOperation({ summary: 'Create a new feature' })
   @Post()
-  create(@Body() dto: CreateFeatureDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateFeatureDto, @Req() req: any) {
+    return this.service.create(dto, req.user.email);
   }
 
   @ApiOperation({ summary: 'Update a feature — logs changes and fires notifications' })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateFeatureDto) {
-    return this.service.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateFeatureDto, @Req() req: any) {
+    return this.service.update(id, dto, req.user.email);
   }
 
   @ApiOperation({ summary: 'Archive a feature (soft delete)' })

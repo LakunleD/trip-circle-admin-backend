@@ -113,9 +113,9 @@ export class FeaturesService {
     return feature;
   }
 
-  async create(dto: CreateFeatureDto) {
+  async create(dto: CreateFeatureDto, createdBy: string) {
     const feature = await this.prisma.feature.create({
-      data: { ...dto, links: (dto.links ?? []) as Prisma.InputJsonValue },
+      data: { ...dto, createdBy, links: (dto.links ?? []) as Prisma.InputJsonValue },
     });
 
     await this.prisma.featureHistory.create({
@@ -124,43 +124,40 @@ export class FeaturesService {
         fieldChanged: 'created',
         oldValue: null,
         newValue: feature.title,
-        changedBy: dto.createdBy,
+        changedBy: createdBy,
       },
     });
 
-    // notify if assigned on creation
     if (feature.assignee) {
       this.notifications
-        .notifyAssigned(feature, feature.assignee, dto.createdBy)
+        .notifyAssigned(feature, feature.assignee, createdBy)
         .catch(() => {});
     }
 
     return feature;
   }
 
-  async update(id: string, dto: UpdateFeatureDto) {
+  async update(id: string, dto: UpdateFeatureDto, changedBy: string) {
     const current = await this.findOne(id);
-    const { changedBy, ...fields } = dto;
 
-    const { links, ...rest } = fields;
+    const { links, ...rest } = dto;
     const updated = await this.prisma.feature.update({
       where: { id },
       data: { ...rest, ...(links !== undefined ? { links: links as Prisma.InputJsonValue } : {}) },
     });
 
-    // log each changed field to history
-    const trackable: (keyof typeof fields)[] = [
+    const trackable: (keyof typeof dto)[] = [
       'title', 'description', 'category', 'status', 'priority',
       'originTag', 'phase', 'workType', 'assignee', 'specLink',
     ];
 
     const historyEntries = trackable
-      .filter((f) => fields[f] !== undefined && String(fields[f]) !== String((current as any)[f]))
+      .filter((f) => dto[f] !== undefined && String(dto[f]) !== String((current as any)[f]))
       .map((f) => ({
         featureId: id,
         fieldChanged: f,
         oldValue: (current as any)[f] != null ? String((current as any)[f]) : null,
-        newValue: fields[f] != null ? String(fields[f]) : null,
+        newValue: dto[f] != null ? String(dto[f]) : null,
         changedBy,
       }));
 
@@ -168,15 +165,14 @@ export class FeaturesService {
       await this.prisma.featureHistory.createMany({ data: historyEntries });
     }
 
-    // fire notifications async
-    if (fields.status === 'blocked' && current.status !== 'blocked') {
+    if (dto.status === 'blocked' && current.status !== 'blocked') {
       this.notifications.notifyBlocked(updated).catch(() => {});
     }
-    if (fields.status === 'built' && current.status !== 'built') {
+    if (dto.status === 'built' && current.status !== 'built') {
       this.notifications.notifyBuilt(updated).catch(() => {});
     }
-    if (fields.assignee && fields.assignee !== current.assignee) {
-      this.notifications.notifyAssigned(updated, fields.assignee, changedBy).catch(() => {});
+    if (dto.assignee && dto.assignee !== current.assignee) {
+      this.notifications.notifyAssigned(updated, dto.assignee, changedBy).catch(() => {});
     }
 
     return updated;
