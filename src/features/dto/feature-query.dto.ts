@@ -1,13 +1,35 @@
-import { IsOptional, IsString, IsIn } from 'class-validator';
+import { IsOptional, IsString, IsIn, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  FEATURE_STATUSES,
+  FEATURE_PRIORITIES,
+  FEATURE_WORK_TYPES,
+  FEATURE_TIERS,
+  FEATURE_PLATFORMS,
+  FEATURE_SORT_FIELDS,
+  SORT_ORDERS,
+} from '../constants/feature.enums';
 
 export class FeatureQueryDto {
   @IsOptional()
-  @IsString()
+  @IsIn([...FEATURE_STATUSES])
   status?: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn([...FEATURE_PRIORITIES])
+  priority?: string;
+
+  @IsOptional()
+  @IsIn([...FEATURE_WORK_TYPES])
   workType?: string;
+
+  @IsOptional()
+  @IsIn([...FEATURE_TIERS])
+  tier?: string;
+
+  @IsOptional()
+  @IsIn([...FEATURE_PLATFORMS])
+  platform?: string;
 
   @IsOptional()
   @IsString()
@@ -15,21 +37,35 @@ export class FeatureQueryDto {
 
   @IsOptional()
   @IsString()
-  phase?: string;
+  category?: string;
 
   @IsOptional()
   @IsString()
-  category?: string;
+  phase?: string;
 
+  // searches title and description
   @IsOptional()
   @IsString()
   search?: string;
 
   @IsOptional()
-  @IsIn(['createdAt', 'updatedAt', 'priority', 'title'])
+  @IsIn([...FEATURE_SORT_FIELDS])
   sortBy?: string;
 
   @IsOptional()
-  @IsIn(['asc', 'desc'])
+  @IsIn([...SORT_ORDERS])
   sortOrder?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }

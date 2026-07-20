@@ -7,8 +7,12 @@ import { FeaturesService } from './features.service';
 import { CreateFeatureDto } from './dto/create-feature.dto';
 import { UpdateFeatureDto } from './dto/update-feature.dto';
 import { CreateFeatureCommentDto } from './dto/create-feature-comment.dto';
+import { UpdateFeatureCommentDto } from './dto/update-feature-comment.dto';
 import { FeatureQueryDto } from './dto/feature-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { isAdminEmail } from '../auth/utils/is-admin.util';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -82,5 +86,17 @@ export class FeaturesController {
   @Post(':id/comments')
   addComment(@Param('id') id: string, @Body() dto: CreateFeatureCommentDto) {
     return this.service.addComment(id, dto);
+  }
+
+  @ApiOperation({ summary: 'Edit a comment — admin only' })
+  @UseGuards(AdminGuard, RolesGuard)
+  @Roles('admin')
+  @Patch(':id/comments/:commentId')
+  updateComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @Body() dto: UpdateFeatureCommentDto,
+  ) {
+    return this.service.updateComment(id, commentId, dto.content);
   }
 }

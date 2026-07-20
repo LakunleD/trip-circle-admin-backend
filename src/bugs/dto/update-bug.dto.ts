@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateBugDto } from './create-bug.dto';
 import { IsOptional, IsIn } from 'class-validator';
 
