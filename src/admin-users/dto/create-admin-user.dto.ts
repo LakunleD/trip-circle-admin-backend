@@ -8,6 +8,9 @@ export class CreateAdminUserDto {
   @IsString()
   name?: string;
 
+  @IsString()
+  phone: string;
+
   @IsOptional()
   @IsIn(['admin', 'engineer', 'viewer'])
   role?: string;
