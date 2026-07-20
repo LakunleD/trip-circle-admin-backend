@@ -1,4 +1,11 @@
 import { IsString, IsOptional, IsIn, IsArray, IsObject } from 'class-validator';
+import {
+  FEATURE_STATUSES,
+  FEATURE_PRIORITIES,
+  FEATURE_WORK_TYPES,
+  FEATURE_TIERS,
+  FEATURE_PLATFORMS,
+} from '../constants/feature.enums';
 
 export class CreateFeatureDto {
   @IsString()
@@ -12,11 +19,11 @@ export class CreateFeatureDto {
   category: string;
 
   @IsOptional()
-  @IsIn(['backlog', 'not_started', 'in_progress', 'blocked', 'built', 'paused', 'deprecated'])
+  @IsIn([...FEATURE_STATUSES])
   status?: string;
 
   @IsOptional()
-  @IsIn(['low', 'medium', 'high', 'critical'])
+  @IsIn([...FEATURE_PRIORITIES])
   priority?: string;
 
   @IsOptional()
@@ -28,7 +35,7 @@ export class CreateFeatureDto {
   phase?: string;
 
   @IsOptional()
-  @IsIn(['App Feature', 'AI Agent', 'Internal Tool', 'Setup Task', 'B2B Portal'])
+  @IsIn([...FEATURE_WORK_TYPES])
   workType?: string;
 
   @IsOptional()
@@ -40,11 +47,11 @@ export class CreateFeatureDto {
   specLink?: string;
 
   @IsOptional()
-  @IsIn(['free', 'tripcircle_plus'])
+  @IsIn([...FEATURE_TIERS])
   tier?: string;
 
   @IsOptional()
-  @IsIn(['web', 'mobile_only', 'web_and_mobile'])
+  @IsIn([...FEATURE_PLATFORMS])
   platform?: string;
 
   @IsOptional()

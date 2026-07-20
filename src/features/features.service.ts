@@ -19,26 +19,53 @@ export class FeaturesService {
   async findAll(query: FeatureQueryDto, isAdmin: boolean) {
     const where: any = { isArchived: false };
 
+    // non-admins cannot see backlog; also prevent status filter bypassing this
     if (!isAdmin) {
-      where.status = { notIn: ADMIN_STATUSES };
+      where.status = query.status && !ADMIN_STATUSES.includes(query.status)
+        ? query.status
+        : { notIn: ADMIN_STATUSES };
+    } else if (query.status) {
+      where.status = query.status;
     }
 
-    if (query.status) where.status = query.status;
+    if (query.priority) where.priority = query.priority;
     if (query.workType) where.workType = query.workType;
+    if (query.tier) where.tier = query.tier;
+    if (query.platform) where.platform = query.platform;
     if (query.assignee) where.assignee = query.assignee;
-    if (query.phase) where.phase = query.phase;
     if (query.category) where.category = query.category;
+    if (query.phase) where.phase = query.phase;
+
     if (query.search) {
-      where.title = { contains: query.search, mode: 'insensitive' };
+      where.OR = [
+        { title: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } },
+      ];
     }
 
     const sortBy = query.sortBy ?? 'updatedAt';
     const sortOrder = query.sortOrder ?? 'desc';
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
 
-    return this.prisma.feature.findMany({
-      where,
-      orderBy: { [sortBy]: sortOrder },
-    });
+    const [data, total] = await Promise.all([
+      this.prisma.feature.findMany({
+        where,
+        orderBy: { [sortBy]: sortOrder },
+        skip,
+        take: limit,
+      }),
+      this.prisma.feature.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findKanban(isAdmin: boolean) {
@@ -215,6 +242,12 @@ export class FeaturesService {
     }
 
     return comment;
+  }
+
+  async updateComment(featureId: string, commentId: string, content: string) {
+    const comment = await this.prisma.featureComment.findUnique({ where: { id: commentId } });
+    if (!comment || comment.featureId !== featureId) throw new NotFoundException('Comment not found');
+    return this.prisma.featureComment.update({ where: { id: commentId }, data: { content } });
   }
 
   async checkDuplicate(title: string): Promise<{ isDuplicate: boolean; existing?: { id: string; title: string } }> {

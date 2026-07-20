@@ -10,7 +10,9 @@ export class AuthService {
   ) {}
 
   async validateGoogleUser(email: string) {
-    return this.prisma.adminUser.findUnique({ where: { email } });
+    return this.prisma.adminUser.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
   }
 
   generateToken(user: { id: string; email: string; role: string }) {

@@ -11,8 +11,8 @@ export class AdminGuard implements CanActivate {
 
     if (!user?.email) throw new ForbiddenException('Admin access required');
 
-    const adminUser = await this.prisma.adminUser.findUnique({
-      where: { email: user.email },
+    const adminUser = await this.prisma.adminUser.findFirst({
+      where: { email: { equals: user.email, mode: 'insensitive' } },
     });
 
     if (!adminUser) throw new ForbiddenException('Admin access required');
