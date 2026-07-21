@@ -82,6 +82,12 @@ export class FeaturesController {
     return this.service.archive(id);
   }
 
+  @ApiOperation({ summary: 'Get all comments for a feature' })
+  @Get(':id/comments')
+  getComments(@Param('id') id: string) {
+    return this.service.getComments(id);
+  }
+
   @ApiOperation({ summary: 'Add a comment — triggers @mention notifications' })
   @Post(':id/comments')
   addComment(@Param('id') id: string, @Body() dto: CreateFeatureCommentDto) {

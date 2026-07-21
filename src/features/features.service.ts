@@ -210,6 +210,14 @@ export class FeaturesService {
     return this.prisma.feature.update({ where: { id }, data: { isArchived: true } });
   }
 
+  async getComments(featureId: string) {
+    await this.findOne(featureId);
+    return this.prisma.featureComment.findMany({
+      where: { featureId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   async addComment(featureId: string, dto: CreateFeatureCommentDto) {
     const feature = await this.findOne(featureId);
 
