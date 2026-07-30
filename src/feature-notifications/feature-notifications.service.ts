@@ -20,33 +20,66 @@ export class FeatureNotificationsService {
     }
   }
 
-  // Trigger 1: feature assigned to someone
-  async notifyAssigned(feature: { id: string; title: string; priority: string; phase?: string | null }, assigneeEmail: string, assignedBy: string) {
-    const member = await this.prisma.teamMember.findUnique({ where: { email: assigneeEmail } });
-    if (!member) return;
+  // Trigger 1: feature assigned — different message for assignee and assigner
+  async notifyAssigned(
+    feature: { id: string; title: string; priority: string; phase?: string | null },
+    assigneeEmail: string,
+    assignedBy: string,
+  ) {
+    const [assignee, assigner] = await Promise.all([
+      this.prisma.adminUser.findFirst({ where: { email: { equals: assigneeEmail, mode: 'insensitive' } } }),
+      this.prisma.adminUser.findFirst({ where: { email: { equals: assignedBy, mode: 'insensitive' } } }),
+    ]);
 
     const link = this.featureLink(feature.id);
-    const body =
-      `📋 *TripCircle Ops — Feature Assigned*\n\n` +
-      `You were assigned a feature.\n` +
-      `*Feature:* ${feature.title}\n` +
-      `*Priority:* ${feature.priority}\n` +
-      `*Phase:* ${feature.phase ?? '—'}\n` +
-      `*Assigned by:* ${assignedBy}\n` +
-      `View: ${link}`;
 
-    await Promise.allSettled([
-      this.sendMessage(member.phone, body, T7_FEATURE_UPDATE),
-      this.sendEmail(
-        member.email,
-        `[Feature Assigned] ${feature.title}`,
-        this.emailHtml('Feature Assigned to You', body.replace(/\*/g, ''), link),
-      ),
-    ]);
+    // Message to the person receiving the task
+    if (assignee) {
+      const assignerLabel = assigner?.name ?? assignedBy;
+      const body =
+        `📋 *TripCircle Ops — Task Assigned to You*\n\n` +
+        `*Feature:* ${feature.title}\n` +
+        `*Priority:* ${feature.priority}\n` +
+        `*Phase:* ${feature.phase ?? '—'}\n` +
+        `*Assigned by:* ${assignerLabel}\n` +
+        `View: ${link}`;
+
+      await Promise.allSettled([
+        this.sendMessage(assignee.phone, body, T7_FEATURE_UPDATE),
+        this.sendEmail(
+          assignee.email,
+          `[Assigned to You] ${feature.title}`,
+          this.emailHtml('Task Assigned to You', body.replace(/\*/g, ''), link),
+        ),
+      ]);
+    }
+
+    // Confirmation message to the person who made the assignment
+    if (assigner && assigner.email.toLowerCase() !== assigneeEmail.toLowerCase()) {
+      const assigneeLabel = assignee?.name ?? assigneeEmail;
+      const body =
+        `📋 *TripCircle Ops — Assignment Confirmed*\n\n` +
+        `*Feature:* ${feature.title}\n` +
+        `*Assigned to:* ${assigneeLabel}\n` +
+        `View: ${link}`;
+
+      await Promise.allSettled([
+        this.sendMessage(assigner.phone, body, T7_FEATURE_UPDATE),
+        this.sendEmail(
+          assigner.email,
+          `[You Assigned] ${feature.title}`,
+          this.emailHtml('You Assigned a Task', body.replace(/\*/g, ''), link),
+        ),
+      ]);
+    }
   }
 
   // Trigger 2: @mention in a comment
-  async notifyMentioned(feature: { id: string; title: string }, mentionedEmail: string, commentPreview: string) {
+  async notifyMentioned(
+    feature: { id: string; title: string },
+    mentionedEmail: string,
+    commentPreview: string,
+  ) {
     const member = await this.prisma.teamMember.findUnique({ where: { email: mentionedEmail } });
     if (!member) return;
 
@@ -67,10 +100,12 @@ export class FeatureNotificationsService {
     ]);
   }
 
-  // Trigger 3: feature marked blocked
+  // Trigger 3: feature blocked — notifies assignee only
   async notifyBlocked(feature: { id: string; title: string; assignee?: string | null }) {
     if (!feature.assignee) return;
-    const member = await this.prisma.teamMember.findUnique({ where: { email: feature.assignee } });
+    const member = await this.prisma.adminUser.findFirst({
+      where: { email: { equals: feature.assignee, mode: 'insensitive' } },
+    });
     if (!member) return;
 
     const link = this.featureLink(feature.id);
@@ -90,27 +125,47 @@ export class FeatureNotificationsService {
     ]);
   }
 
-  // Trigger 4: feature marked built
-  async notifyBuilt(feature: { id: string; title: string; assignee?: string | null }) {
-    if (!feature.assignee) return;
-    const member = await this.prisma.teamMember.findUnique({ where: { email: feature.assignee } });
-    if (!member) return;
+  // Trigger 4: feature moved to testing — notifies whole team
+  async notifyTesting(feature: { id: string; title: string }) {
+    return this.notifyAllTeam(feature, '🧪', 'In Testing', 'A feature has moved to testing.');
+  }
 
+  // Trigger 5: feature passed testing — notifies whole team
+  async notifyPassed(feature: { id: string; title: string }) {
+    return this.notifyAllTeam(feature, '✅', 'Passed Testing', 'A feature has passed testing.');
+  }
+
+  // Trigger 6: feature deployed — notifies whole team
+  async notifyDeployed(feature: { id: string; title: string }) {
+    return this.notifyAllTeam(feature, '🚀', 'Deployed', 'A feature has been deployed.');
+  }
+
+  // Shared: blast email + WhatsApp to every admin_user
+  private async notifyAllTeam(
+    feature: { id: string; title: string },
+    emoji: string,
+    heading: string,
+    intro: string,
+  ) {
+    const admins = await this.prisma.adminUser.findMany();
     const link = this.featureLink(feature.id);
+
     const body =
-      `✅ *TripCircle Ops — Feature Built*\n\n` +
-      `A feature you own was marked built.\n` +
+      `${emoji} *TripCircle Ops — ${heading}*\n\n` +
+      `${intro}\n` +
       `*Feature:* ${feature.title}\n` +
       `View: ${link}`;
 
-    await Promise.allSettled([
-      this.sendMessage(member.phone, body, T7_FEATURE_UPDATE),
-      this.sendEmail(
-        member.email,
-        `[Built] ${feature.title}`,
-        this.emailHtml('Feature Marked Built', body.replace(/\*/g, ''), link),
-      ),
-    ]);
+    await Promise.allSettled(
+      admins.flatMap((admin) => [
+        this.sendMessage(admin.phone, body, T7_FEATURE_UPDATE),
+        this.sendEmail(
+          admin.email,
+          `[${heading}] ${feature.title}`,
+          this.emailHtml(heading, body.replace(/\*/g, ''), link),
+        ),
+      ]),
+    );
   }
 
   // Route to SMS (+1) or WhatsApp (all others)
@@ -127,11 +182,8 @@ export class FeatureNotificationsService {
 
     try {
       if (isUsNumber) {
-        // SMS for +1 numbers
         await this.twilio.messages.create({ body, messagingServiceSid, to: phone });
       } else {
-        // WhatsApp for all others
-        // To use T7 template: swap body for contentSid + contentVariables when template vars are confirmed
         await this.twilio.messages.create({ body, messagingServiceSid, to: `whatsapp:${phone}` });
       }
     } catch (err) {

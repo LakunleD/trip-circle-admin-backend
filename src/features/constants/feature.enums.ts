@@ -4,6 +4,9 @@ export const FEATURE_STATUSES = [
   'in_progress',
   'blocked',
   'built',
+  'testing',
+  'passed',
+  'deployed',
   'paused',
   'deprecated',
 ] as const;
