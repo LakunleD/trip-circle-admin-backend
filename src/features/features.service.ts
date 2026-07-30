@@ -195,8 +195,14 @@ export class FeaturesService {
     if (dto.status === 'blocked' && current.status !== 'blocked') {
       this.notifications.notifyBlocked(updated).catch(() => {});
     }
-    if (dto.status === 'built' && current.status !== 'built') {
-      this.notifications.notifyBuilt(updated).catch(() => {});
+    if (dto.status === 'testing' && current.status !== 'testing') {
+      this.notifications.notifyTesting(updated).catch(() => {});
+    }
+    if (dto.status === 'passed' && current.status !== 'passed') {
+      this.notifications.notifyPassed(updated).catch(() => {});
+    }
+    if (dto.status === 'deployed' && current.status !== 'deployed') {
+      this.notifications.notifyDeployed(updated).catch(() => {});
     }
     if (dto.assignee && dto.assignee !== current.assignee) {
       this.notifications.notifyAssigned(updated, dto.assignee, changedBy).catch(() => {});
