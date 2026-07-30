@@ -75,18 +75,30 @@ export class OpsAiService {
 
     // mock digest prose
     const built = recentHistory.filter((h) => h.newValue === 'built');
+    const testing = recentHistory.filter((h) => h.newValue === 'testing');
+    const passed = recentHistory.filter((h) => h.newValue === 'passed');
+    const deployed = recentHistory.filter((h) => h.newValue === 'deployed');
     const blocked = recentHistory.filter((h) => h.newValue === 'blocked');
 
     const summary =
       `**Weekly Digest (last 7 days)**\n\n` +
       `${recentHistory.length} changes recorded across the feature board.\n\n` +
+      (deployed.length > 0
+        ? `🚀 ${deployed.length} feature(s) deployed: ${deployed.map((h) => h.feature.title).join(', ')}\n\n`
+        : '') +
+      (passed.length > 0
+        ? `✅ ${passed.length} feature(s) passed testing: ${passed.map((h) => h.feature.title).join(', ')}\n\n`
+        : '') +
+      (testing.length > 0
+        ? `🧪 ${testing.length} feature(s) in testing: ${testing.map((h) => h.feature.title).join(', ')}\n\n`
+        : '') +
       (built.length > 0
-        ? `✅ ${built.length} feature(s) marked built: ${built.map((h) => h.feature.title).join(', ')}\n\n`
+        ? `🔨 ${built.length} feature(s) marked built: ${built.map((h) => h.feature.title).join(', ')}\n\n`
         : '') +
       (blocked.length > 0
         ? `🚧 ${blocked.length} feature(s) blocked: ${blocked.map((h) => h.feature.title).join(', ')}\n\n`
         : '') +
-      `**Current board:** In Progress: ${counts['in_progress'] ?? 0} · Blocked: ${counts['blocked'] ?? 0} · Built: ${counts['built'] ?? 0}\n\n` +
+      `**Current board:** In Progress: ${counts['in_progress'] ?? 0} · Blocked: ${counts['blocked'] ?? 0} · Built: ${counts['built'] ?? 0} · Testing: ${counts['testing'] ?? 0} · Passed: ${counts['passed'] ?? 0} · Deployed: ${counts['deployed'] ?? 0}\n\n` +
       `_AI-generated digest. Wire LiteLLM for richer summaries._`;
 
     return { mock: true, summary, counts };

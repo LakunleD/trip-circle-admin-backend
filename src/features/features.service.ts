@@ -78,7 +78,7 @@ export class FeaturesService {
     });
 
     const columns = [
-      'backlog', 'not_started', 'in_progress', 'blocked', 'built', 'paused', 'deprecated',
+      'backlog', 'not_started', 'in_progress', 'blocked', 'built', 'testing', 'passed', 'deployed', 'paused', 'deprecated',
     ];
 
     const grouped: Record<string, typeof features> = {};
@@ -106,11 +106,15 @@ export class FeaturesService {
 
     return {
       total,
+      notStarted: counts['not_started'] ?? 0,
       inProgress: counts['in_progress'] ?? 0,
       blocked: counts['blocked'] ?? 0,
       built: counts['built'] ?? 0,
-      notStarted: counts['not_started'] ?? 0,
+      testing: counts['testing'] ?? 0,
+      passed: counts['passed'] ?? 0,
+      deployed: counts['deployed'] ?? 0,
       paused: counts['paused'] ?? 0,
+      deprecated: counts['deprecated'] ?? 0,
       ...(isAdmin ? { backlog: counts['backlog'] ?? 0 } : {}),
     };
   }
